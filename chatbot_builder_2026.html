@@ -206,7 +206,7 @@
     </div>
     <div class="top-bar-actions">
       <button class="link-btn" id="fullscreenToggle" type="button" hidden>View full screen</button>
-      <button class="link-btn" id="glossaryToggle" type="button">New to AI? Key terms</button>
+      <button class="link-btn" id="glossaryToggle" type="button" hidden>Glossary of terms</button>
     </div>
   </div>
 
@@ -267,7 +267,7 @@
         <div class="btn-row">
           <button class="btn btn-primary btn-lg" onclick="goTo('screen-intro', 0)">Begin</button>
         </div>
-        <p class="glossary-nudge">New to AI? <button class="link-btn" id="coverGlossaryLink" type="button">Open the plain-language glossary</button> anytime, from any screen.</p>
+        <p class="glossary-nudge">New to AI? <button class="link-btn" id="coverGlossaryLink" type="button">Open the plain-language glossary</button> anytime.</p>
       </div>
     </div>
   </section>
@@ -581,6 +581,8 @@
     syncPromptPanel();
     // The glossary only appears when a user chooses to open it, and closes again when they move on.
     document.getElementById('glossaryPanel').classList.add('hidden');
+    // On the title page the glossary is offered only by its own link; every later screen gets the top-bar link.
+    document.getElementById('glossaryToggle').hidden = (screenId === 'screen-cover');
     window.scrollTo({top:0, behavior:'smooth'});
   }
 
