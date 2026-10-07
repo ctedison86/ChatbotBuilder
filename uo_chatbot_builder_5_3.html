@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reading Discussion Chatbot Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<base target="_parent">
+<style>
+  :root{
+    --uo-green: #007030;
+    --uo-green-dark: #004D30;
+    --uo-yellow: #FEE11A;
+    --night: #3D4546;
+    --obsidian: #000000;
+    --dusk: #A2AAAD;
+    --dawn: #E6E6E6;
+    --lichen: #E8F1D9;
+    --limestone: #F8F2E8;
+    --pacific: #1B3B58;
+    --white: #FFFFFF;
+    --pale-yellow: #FFF8D6;
+    --radius: 10px;
+    --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-body: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family: var(--font-body);
+    background: var(--limestone);
+    color: var(--night);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .page{ max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; }
+  .top-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .top-bar-actions{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:28px; height:28px; border-radius:6px; flex-shrink:0;
+    background: linear-gradient(135deg, var(--uo-green) 55%, var(--uo-yellow) 55%);
+  }
+  .brand-title{ font-family: var(--font-display); font-weight:700; font-size:16px; color: var(--night); }
+  .brand-sub{ font-size:12.5px; color: var(--dusk); display:block; }
+  .link-btn{
+    background:none; border:none; color: var(--pacific); font-family: inherit; font-size:13.5px;
+    font-weight:600; text-decoration: underline; cursor:pointer; padding:0;
+  }
+  .glossary-panel{
+    background: var(--white); border: 1px solid var(--dawn); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 24px; font-size: 14px;
+  }
+  .glossary-panel.hidden{ display:none; }
+  .glossary-panel dt{ font-weight:700; color: var(--uo-green-dark); margin-top:12px; }
+  .glossary-panel dt:first-child{ margin-top:0; }
+  .glossary-panel dd{ margin: 2px 0 0; color: var(--night); }
+  .progress{ display:flex; gap:6px; margin-bottom: 24px; }
+  .progress .step{ flex:1; height:6px; border-radius:3px; background: var(--dawn); }
+  .progress .step.done{ background: var(--uo-green); }
+  .progress .step.current{ background: var(--uo-yellow); }
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+  .card{
+    background: var(--white); border: 1px solid var(--dawn); border-radius: var(--radius);
+    padding: 28px 28px 24px;
+  }
+  h1{ font-family: var(--font-display); font-weight:700; font-size: 29px; color: var(--night); margin: 0 0 10px; text-wrap: balance; }
+  h2{ font-family: var(--font-display); font-weight:700; font-size: 23px; color: var(--night); margin: 0 0 4px; text-wrap: balance; }
+  h3{ font-family: var(--font-display); font-weight:700; font-size: 17px; color: var(--night); margin: 0 0 10px; }
+  p{ margin: 0 0 14px; }
+  .muted{ color: var(--night); font-size: 14.5px; }
+  .step-kicker{ font-size:12.5px; font-weight:700; letter-spacing:0.03em; color: var(--uo-green-dark); text-transform:uppercase; margin-bottom:8px; }
+  .tip{
+    display:flex; gap:12px; background: var(--lichen); border-radius:10px; padding:14px 16px;
+    margin: 18px 0; font-size:14px; color: var(--night);
+  }
+  .tip svg{ flex-shrink:0; margin-top:2px; }
+  .tip strong{ color: var(--uo-green-dark); }
+  .key-note{
+    display:flex; gap:12px; background: var(--pale-yellow); border-left: 4px solid var(--uo-yellow);
+    border-radius:10px; padding:14px 16px; margin: 18px 0; font-size:14px; color: var(--night);
+  }
+  .key-note svg{ flex-shrink:0; margin-top:2px; }
+  .key-note strong{ color: var(--night); }
+  .disclaimer{ color: var(--dusk); font-size:12.5px; margin: 18px 0 0; }
+  .btn-row{ display:flex; gap:12px; margin-top: 22px; flex-wrap:wrap; }
+  .btn{
+    font-family: inherit; font-size:14.5px; font-weight:700; border-radius:8px; padding:12px 20px;
+    cursor:pointer; border:1.5px solid transparent;
+  }
+  .btn-primary{ background: var(--uo-green); color: var(--white); }
+  .btn-primary:hover{ background: var(--uo-green-dark); }
+  .btn-secondary{ background: var(--white); color: var(--night); border-color: var(--dusk); }
+  .btn-secondary:hover{ border-color: var(--night); }
+  .field{ margin-bottom: 18px; }
+  .field-label{ display:block; font-size:13.5px; font-weight:600; color: var(--night); margin-bottom:6px; }
+  input[type=text], input[type=url], textarea{
+    width:100%; font-family: inherit; font-size:14.5px; color: var(--night);
+    border:1.5px solid var(--dusk); border-radius:8px; padding:10px 12px; background: var(--white);
+  }
+  textarea{ resize: vertical; min-height: 80px; }
+  .grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 560px){ .grid-2{ grid-template-columns: 1fr; } }
+  .chip-row, .option-grid{ display:flex; flex-wrap:wrap; gap:10px; margin: 10px 0 4px; }
+  .chip-wrap, .option-wrap{ position:relative; }
+  .chip-input, .option-card-input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .chip-label{
+    display:inline-block; padding:9px 16px; border-radius:20px; border:1.5px solid var(--dusk);
+    font-size:13.5px; font-weight:600; color: var(--night); background: var(--white); cursor:pointer;
+  }
+  .chip-input:checked + .chip-label{ background: var(--lichen); border-color: var(--uo-green); color: var(--uo-green-dark); }
+  .chip-input:focus-visible + .chip-label{ outline: 2px solid var(--pacific); outline-offset:2px; }
+  .option-card-label{
+    display:block; width: 100%; padding:12px 14px; border-radius:10px; border:1.5px solid var(--dusk);
+    font-size:13.5px; color: var(--night); background: var(--white); cursor:pointer;
+  }
+  .option-card-label strong{ display:block; font-size:14.5px; margin-bottom:2px; }
+  .option-card-input:checked + .option-card-label{ background: var(--lichen); border-color: var(--uo-green); }
+  .option-card-input:focus-visible + .option-card-label{ outline: 2px solid var(--pacific); outline-offset:2px; }
+  .option-grid.cols-2 .option-wrap{ flex: 1 1 45%; min-width: 220px; }
+  .radio-row{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .radio-row input{ margin-top:4px; width:17px; height:17px; accent-color: var(--uo-green); flex-shrink:0; }
+  .radio-row label{ font-size:14.5px; }
+  .check-row{ display:flex; align-items:flex-start; gap:10px; margin-bottom:10px; }
+  .check-row input{ margin-top:4px; width:17px; height:17px; accent-color: var(--uo-green); flex-shrink:0; }
+  .check-row label{ font-size:14.5px; }
+  .guide-ref{ color: var(--dusk); font-size:12.5px; }
+  .next-group{ margin-bottom: 22px; }
+  .next-group h3{ margin-bottom:10px; }
+  .path-toggle{ display:flex; gap:10px; margin: 14px 0 18px; flex-wrap:wrap; }
+  .path-toggle button{
+    flex:1; min-width:220px; padding:12px 16px; border:1.5px solid var(--dusk); border-radius:8px;
+    background: var(--white); font-family: inherit; font-size:14px; font-weight:600; color: var(--night);
+    cursor:pointer; text-align:left;
+  }
+  .path-toggle button.active{ border-color: var(--uo-green); background: var(--lichen); }
+  .instructions-box{ background: var(--limestone); border: 1px solid var(--dawn); border-radius: 10px; padding: 16px 18px; }
+  .instructions-box ol, .instructions-box ul{ margin:0; padding-left: 20px; }
+  .instructions-box li{ font-size: 14.5px; color: var(--night); margin-bottom: 8px; }
+  .instructions-box li::marker{ color: var(--uo-green-dark); font-weight:700; }
+  #output{ min-height: 260px; font-family: "Source Code Pro", ui-monospace, monospace; font-size:13px; }
+  .copied-msg{ color: var(--uo-green-dark); font-size:13.5px; font-weight:600; margin-left:10px; }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .btn-sm{ font-size:13px; padding:8px 14px; }
+  .prompt-panel{
+    border: 1.5px solid var(--uo-green); background: var(--lichen); border-radius: 10px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .prompt-panel-head{ padding: 12px 14px 12px 16px; }
+  .prompt-panel-head-row{ display:flex; align-items:center; gap:10px; }
+  .prompt-panel-toggle{
+    display:flex; align-items:center; gap:8px; background:none; border:none; cursor:pointer;
+    font-family: inherit; font-size:14.5px; font-weight:700; color: var(--uo-green-dark);
+    padding:2px 0; flex:1; text-align:left;
+  }
+  .prompt-panel-toggle svg{ transition: transform 0.15s ease; flex-shrink:0; }
+  .prompt-panel.open .prompt-panel-toggle svg{ transform: rotate(180deg); }
+  .prompt-panel-caption{ margin: 6px 0 0 22px; font-size:12.5px; color: var(--night); opacity:0.75; }
+  .prompt-panel.open .prompt-panel-caption{ display:none; }
+  .prompt-panel-body{ display:none; padding: 0 16px 16px; }
+  .prompt-panel.open .prompt-panel-body{ display:block; }
+  .prompt-panel-body textarea{
+    width:100%; min-height: 240px; font-family: "Source Code Pro", ui-monospace, monospace; font-size:13px;
+    color: var(--night); border:1.5px solid var(--dusk); border-radius:8px; padding:10px 12px; background: var(--white);
+    resize: vertical;
+  }
+  .instructions-heading{ margin: 4px 0 10px; }
+  .instructions-heading h3{ margin: 0 0 2px; }
+  .instructions-heading p{ margin: 0; }
+  .cover{ border-radius: var(--radius); overflow:hidden; border: 1px solid var(--dawn); background: var(--white); }
+  .cover-hero{ background: var(--uo-green); color: var(--white); padding: 44px 36px 40px; border-bottom: 6px solid var(--uo-yellow); }
+  .cover-kicker{ font-size:12.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color: var(--uo-yellow); margin-bottom:14px; }
+  .cover-hero h1{ font-family: var(--font-display); font-weight:700; font-size: 40px; line-height:1.15; color: var(--white); margin: 0 0 14px; text-wrap: balance; }
+  .cover-hero p{ font-size:17px; line-height:1.55; margin:0; color: #E8F1D9; max-width: 560px; }
+  .cover-body{ padding: 28px 36px 30px; }
+  .cover-body h2{ font-family: var(--font-display); font-weight:700; font-size: 19px; color: var(--night); margin: 16px 0 12px; }
+  .need-list{ list-style:none; margin:0 0 18px; padding:0; }
+  .need-list li{ display:flex; gap:12px; align-items:flex-start; font-size:15px; margin-bottom:10px; }
+  .need-list svg{ flex-shrink:0; margin-top:3px; }
+  .time-chip{ display:inline-flex; align-items:center; gap:8px; background: var(--lichen); color: var(--uo-green-dark); font-size:13.5px; font-weight:700; border-radius:20px; padding:7px 14px; }
+  .btn-lg{ font-size:15px; padding:13px 26px; }
+  .glossary-nudge{ font-size:13.5px; color: var(--night); margin: 16px 0 0; }
+  @media (max-width: 560px){
+    .cover-hero{ padding: 32px 22px 28px; }
+    .cover-hero h1{ font-size: 31px; }
+    .cover-body{ padding: 22px 22px 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top-bar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div>
+        <span class="brand-title">Reading-Discussion Chatbot Builder</span><br/>
+        <span class="brand-sub">UO Online</span>
+      </div>
+    </div>
+    <div class="top-bar-actions">
+      <button class="link-btn" id="fullscreenToggle" type="button" hidden>View full screen</button>
+      <button class="link-btn" id="glossaryToggle" type="button">New to AI? Key terms</button>
+    </div>
+  </div>
+
+  <div class="glossary-panel hidden" id="glossaryPanel">
+    <dl>
+      <dt>GenAI / AI chat tool</dt>
+      <dd>A computer program (like Microsoft Copilot, Claude, or ChatGPT) that can hold a conversation, answer questions, and follow written instructions.</dd>
+      <dt>Chatbot</dt>
+      <dd>An AI chat tool set up for one specific purpose — in this case, discussing a reading with your students, rather than answering just anything.</dd>
+      <dt>Prompt</dt>
+      <dd>The finished piece of instructional text this page builds for you. You paste it into an AI tool to tell it how to behave.</dd>
+      <dt>Persona</dt>
+      <dd>The personality or role you want the chatbot to take on while talking with students — encouraging, skeptical, curious, and so on.</dd>
+      <dt>Instructions / "system prompt"</dt>
+      <dd>The behind-the-scenes text that tells an AI tool how to act for the rest of the conversation. Your prompt from this page goes here.</dd>
+      <dt>Configuration or settings screen</dt>
+      <dd>The setup page inside an AI tool where you paste your prompt and attach files, before students ever see the chatbot.</dd>
+      <dt>Project / Custom GPT / Agent</dt>
+      <dd>A saved, reusable chatbot you build inside an AI platform — it remembers your instructions and attached files so you don't retype them.</dd>
+      <dt>Canvas / LMS</dt>
+      <dd>Your course's learning management system — where students already go for readings, assignments, and grades.</dd>
+      <dt>Hallucination</dt>
+      <dd>When an AI tool confidently says something that isn't actually true. It's one good reason to try out your chatbot yourself before students use it.</dd>
+    </dl>
+    <button class="link-btn" id="glossaryClose" type="button" style="margin-top:10px;">Close</button>
+  </div>
+
+  <div class="progress" id="progressBar"></div>
+
+  <!-- COVER / TITLE PAGE -->
+  <section class="screen active" id="screen-cover">
+    <div class="cover">
+      <div class="cover-hero">
+        <div class="cover-kicker">A UO Online module</div>
+        <h1>Reading-Discussion Chatbot Builder</h1>
+        <p>A chatbot is an AI program that lets students discuss a reading with it and test their ideas, interpretations, and questions. It responds with questions that push them to explain, support, and reconsider their reasoning. In about 10–15 minutes, you'll set one up for your course so that it prompts students to think for themselves rather than handing them answers. No AI experience needed.</p>
+      </div>
+      <div class="cover-body">
+        <div class="time-chip">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#004D30" stroke-width="2"/><path d="M12 7v5l3 2" stroke="#004D30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          About 10–15 minutes
+        </div>
+        <h2>What you'll need</h2>
+        <ul class="need-list">
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" stroke="#007030" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="#007030" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><strong>Your reading(s)</strong> as a file or a link. Have more than one if you want students to compare texts.</span>
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z" stroke="#007030" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="#007030" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><strong>Your UO login</strong> for Microsoft Copilot (your UO email and password).</span>
+          </li>
+          <li>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="5" width="16" height="14" rx="2" stroke="#007030" stroke-width="1.8"/><path d="M4 10h16" stroke="#007030" stroke-width="1.8"/></svg>
+            <span><strong>Your Canvas course,</strong> where you'll add the link to your finished chatbot.</span>
+          </li>
+        </ul>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-lg" onclick="goTo('screen-intro', 0)">Begin</button>
+        </div>
+        <p class="glossary-nudge">New to AI? <button class="link-btn" id="coverGlossaryLink" type="button">Open the plain-language glossary</button> anytime, from any screen.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTRO -->
+  <section class="screen" id="screen-intro">
+    <div class="card">
+      <h1>Build a prompt for your reading-discussion chatbot</h1>
+      <p>This page asks you a few simple questions, then turns your answers into one finished piece of text called a "prompt" — instructions that tell an AI tool how to act. When you're done, you'll paste that text into an AI tool to create your chatbot.</p>
+      <p class="muted">This page doesn't save anything — if you close it partway through, you'll need to start over, so once your prompt is finished, copy it somewhere safe (like a document on your computer).</p>
+      <div class="tip">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 21h6M12 3a6 6 0 00-3.5 10.9c.4.3.6.8.6 1.3V16h5.8v-.8c0-.5.2-1 .6-1.3A6 6 0 0012 3z" stroke="#004D30" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>This page is built around Microsoft Copilot.</strong> UO has an agreement that gives every faculty member and student free, secure access at copilot.cloud.microsoft — that's why it's the recommended path. Either way, the text you build here will work anywhere: you can also paste it into Claude, ChatGPT, or another AI website instead.</div>
+      </div>
+      <div class="key-note">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" stroke="#3D4546" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="#3D4546" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 13h6M9 17h6" stroke="#3D4546" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><strong>Have your reading ready before you finish this process.</strong> Near the end, you'll give your chatbot the actual reading — as a file or a link — directly in your AI platform. That's what lets the chatbot discuss your specific reading and sources with students, so it's worth keeping them nearby. You don't need them yet, though — feel free to start building your prompt below.</div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo('screen-cover', 0)">Back</button>
+        <button class="btn btn-primary" onclick="goTo('screen-step1', 1)">Get started</button>
+      </div>
+      <p class="disclaimer">This page was built with Claude, Anthropic's AI assistant.</p>
+    </div>
+  </section>
+
+  <!-- STEP 1 -->
+  <section class="screen" id="screen-step1">
+    <div class="card">
+      <div class="step-kicker">Step 1 of 5 &nbsp;·&nbsp; Guide Step 1</div>
+      <h2>What's the goal?</h2>
+      <p class="muted">Before anything else, it helps to decide what you want students to get out of talking with this chatbot. Just answer these in your own words — there's no wrong way to fill this out.</p>
+
+      <div class="field grid-2">
+        <div>
+          <label class="field-label" for="courseName">Course name</label>
+          <input type="text" id="courseName" placeholder="e.g., WR 121: Composition" />
+        </div>
+        <div>
+          <label class="field-label" for="readingTitle">Reading title</label>
+          <input type="text" id="readingTitle" placeholder="e.g., &quot;Shooting an Elephant&quot;" />
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label" for="readingAuthor">Author (optional)</label>
+        <input type="text" id="readingAuthor" placeholder="e.g., George Orwell" />
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="additionalTexts">Additional texts for comparison or synthesis (optional)</label>
+        <textarea id="additionalTexts" placeholder="e.g., &quot;A Rose for Emily&quot; by William Faulkner&#10;&quot;The Story of an Hour&quot; by Kate Chopin — one per line"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">What do you want students to get out of this conversation? (choose any that apply)</label>
+        <div class="chip-row">
+          <span class="chip-wrap"><input class="chip-input" type="checkbox" id="goal1"><label class="chip-label" for="goal1">Build critical-thinking skills</label></span>
+          <span class="chip-wrap"><input class="chip-input" type="checkbox" id="goal2"><label class="chip-label" for="goal2">Practice close reading</label></span>
+          <span class="chip-wrap"><input class="chip-input" type="checkbox" id="goal3"><label class="chip-label" for="goal3">Form and defend an argument</label></span>
+          <span class="chip-wrap"><input class="chip-input" type="checkbox" id="goal4"><label class="chip-label" for="goal4">Connect the reading to real-world issues</label></span>
+          <span class="chip-wrap"><input class="chip-input" type="checkbox" id="goal5"><label class="chip-label" for="goal5">Prepare for a class discussion</label></span>
+          <span class="chip-wrap"><input class="chip-input" type="checkbox" id="goal6"><label class="chip-label" for="goal6">Synthesize themes or ideas across multiple texts</label></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">What should this chatbot never do? (choose any that apply)</label>
+        <div class="check-row"><input type="checkbox" id="never1"><label for="never1">Give students a final answer or thesis outright</label></div>
+        <div class="check-row"><input type="checkbox" id="never2"><label for="never2">Write any part of a graded assignment for them</label></div>
+        <div class="check-row"><input type="checkbox" id="never3"><label for="never3">Pretend to be a real person</label></div>
+        <div class="check-row"><input type="checkbox" id="never4"><label for="never4">Wander into topics unrelated to the reading</label></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">How does this chatbot fit into your course?</label>
+        <div class="radio-row"><input type="radio" name="coursefit" id="fit1" checked><label for="fit1">Optional enrichment — students can use it if they want extra practice</label></div>
+        <div class="radio-row"><input type="radio" name="coursefit" id="fit2"><label for="fit2">Tied to a specific assignment or discussion post</label></div>
+        <div class="radio-row"><input type="radio" name="coursefit" id="fit3"><label for="fit3">Required, but not directly graded</label></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo('screen-intro', 0)">Back</button>
+        <button class="btn btn-primary" onclick="goTo('screen-step2', 2)">Next: Persona and style</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="screen" id="screen-step2">
+    <div class="card">
+      <div class="step-kicker">Step 2 of 5 &nbsp;·&nbsp; Guide Step 4</div>
+      <h2>Choose a personality and conversation style</h2>
+      <p class="muted">These questions shape how the chatbot "sounds" and behaves. Pick whatever feels right — you can select more than one, or write your own.</p>
+
+      <div class="field">
+        <label class="field-label">Persona (choose any that apply)</label>
+        <div class="option-grid cols-2">
+          <span class="option-wrap"><input class="option-card-input" type="checkbox" id="persona1"><label class="option-card-label" for="persona1"><strong>Curious peer</strong>Asks genuine questions, like a classmate thinking out loud with the student.</label></span>
+          <span class="option-wrap"><input class="option-card-input" type="checkbox" id="persona2"><label class="option-card-label" for="persona2"><strong>Socratic guide</strong>Leads with questions rather than statements, prompting students to reason it out.</label></span>
+          <span class="option-wrap"><input class="option-card-input" type="checkbox" id="persona3"><label class="option-card-label" for="persona3"><strong>Thoughtful mentor</strong>Warm and supportive, but still pushes students to go deeper.</label></span>
+          <span class="option-wrap"><input class="option-card-input" type="checkbox" id="persona4"><label class="option-card-label" for="persona4"><strong>Devil's advocate</strong>Respectfully challenges the student's first take to test how well it holds up.</label></span>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label class="field-label" for="personaCustom">Or describe your own persona (optional)</label>
+          <textarea id="personaCustom" placeholder="e.g., A skeptical journalist who keeps asking &quot;how do you know that?&quot;"></textarea>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Conversation style</label>
+        <p class="muted" style="margin-bottom:10px;">This is about the chatbot's approach during the conversation itself — not its personality, but its technique. Getting this right is what keeps a conversation feeling like a real dialogue instead of a lecture or a quiz.</p>
+        <div class="check-row"><input type="checkbox" id="tech1" checked><label for="tech1">Asks a follow-up question before offering any information</label></div>
+        <div class="check-row"><input type="checkbox" id="tech2"><label for="tech2">Challenges assumptions the student brings up</label></div>
+        <div class="check-row"><input type="checkbox" id="tech3"><label for="tech3">Points students back to specific passages for evidence</label></div>
+        <div class="check-row"><input type="checkbox" id="tech4"><label for="tech4">Avoids giving direct answers, even when asked directly</label></div>
+        <div class="check-row"><input type="checkbox" id="tech5"><label for="tech5">Periodically summarizes the student's point back to them</label></div>
+        <div class="field" style="margin-top:10px;">
+          <label class="field-label" for="techCustomName">Name your own conversation-style rule (optional)</label>
+          <input type="text" id="techCustomName" placeholder="e.g., &quot;Plays fair&quot;" />
+          <textarea id="techCustomDetail" placeholder="Describe what this rule means for the conversation..." style="margin-top:8px;"></textarea>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Tone</label>
+        <div class="radio-row"><input type="radio" name="tone" id="tone1"><label for="tone1">Warm and encouraging</label></div>
+        <div class="radio-row"><input type="radio" name="tone" id="tone2" checked><label for="tone2">Neutral and academic</label></div>
+        <div class="radio-row"><input type="radio" name="tone" id="tone3"><label for="tone3">Playful and casual</label></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">How long should the conversation run?</label>
+        <div class="radio-row"><input type="radio" name="length" id="len1"><label for="len1">A short check-in — 3 to 5 exchanges</label></div>
+        <div class="radio-row"><input type="radio" name="length" id="len2" checked><label for="len2">A full conversation — 8 to 12 exchanges</label></div>
+        <div class="radio-row"><input type="radio" name="length" id="len3"><label for="len3">As long as the student wants to keep going</label></div>
+        <div class="radio-row"><input type="radio" name="length" id="len4"><label for="len4">Until a specific goal is reached:</label></div>
+        <input type="text" id="lenOther" placeholder="e.g., until the student drafts a nuanced, arguable thesis statement" style="margin-left:27px; width: calc(100% - 27px);" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo('screen-step1', 1)">Back</button>
+        <button class="btn btn-primary" onclick="goTo('screen-step3', 3)">Next: Guide the discussion</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="screen" id="screen-step3">
+    <div class="card">
+      <div class="step-kicker">Step 3 of 5 &nbsp;·&nbsp; Guide Step 5</div>
+      <h2>Guide the discussion</h2>
+      <p class="muted">Add any specific questions, themes, or expectations you want the chatbot to bring into the conversation. You'll give it the actual reading itself later, in Step 5 — this step is just about how you want the discussion shaped. If you're working with more than one text, this is also where you can describe what you want the chatbot to help students compare, connect, or contrast across them.</p>
+
+      <div class="field">
+        <label class="field-label" for="readingGuide">Discussion questions or themes to explore (optional)</label>
+        <textarea id="readingGuide" placeholder="e.g., Focus on how the author uses evidence to support the argument, and push students to consider the counterargument."></textarea>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Citation expectations</label>
+        <div class="radio-row"><input type="radio" name="cite" id="cite1" checked><label for="cite1">Encourage students to quote or point to specific passages</label></div>
+        <div class="radio-row"><input type="radio" name="cite" id="cite2"><label for="cite2">Require a citation before accepting a claim as supported</label></div>
+        <div class="radio-row"><input type="radio" name="cite" id="cite3"><label for="cite3">Not necessary for this reading</label></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo('screen-step2', 2)">Back</button>
+        <button class="btn btn-primary" onclick="goTo('screen-step4', 4)">Next: Review and generate</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="screen" id="screen-step4">
+    <div class="card">
+      <div class="step-kicker">Step 4 of 5 &nbsp;·&nbsp; Guide Step 6</div>
+      <h2>Review and generate your prompt</h2>
+      <p class="muted">One last question, then this page will assemble everything above into one finished prompt.</p>
+
+      <div class="field">
+        <label class="field-label" for="openingQuestion">How should the chatbot open the conversation? (optional)</label>
+        <input type="text" id="openingQuestion" placeholder="e.g., What surprised you most about this reading?" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="buildPrompt()">Generate my prompt</button>
+      </div>
+
+      <div class="field" id="outputWrap" hidden style="margin-top:22px;">
+        <label class="field-label" for="output">Your finished prompt</label>
+        <textarea id="output" readonly></textarea>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-secondary" type="button" onclick="copyPrompt()">Copy to clipboard</button>
+          <button class="btn btn-secondary" type="button" onclick="downloadPrompt()">Download as .txt</button>
+          <span class="copied-msg" id="copiedMsg" hidden>Copied!</span>
+        </div>
+      </div>
+
+      <div class="btn-row" style="align-items:center;">
+        <button class="btn btn-secondary" onclick="goTo('screen-step3', 3)">Back</button>
+        <button class="btn btn-primary" id="nextToStep5Btn" onclick="goTo('screen-step5', 5)" disabled>Next: Add it to your AI tool</button>
+        <span class="muted" id="nextHint" style="font-size:13px;">Generate your prompt above to continue.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 5 (Guide Step 7) -->
+  <section class="screen" id="screen-step5">
+    <div class="card">
+      <div class="step-kicker">Step 5 of 5 &nbsp;·&nbsp; Guide Step 7</div>
+      <h2>Build your chatbot and add it to Canvas</h2>
+      <p class="muted">You should have your prompt copied or downloaded from the last step. Canvas doesn't build the chatbot itself — you'll build it on an AI platform, then add a link to it in Canvas so students can reach it. First, which platform are you using?</p>
+
+      <div class="prompt-panel" id="promptPanel">
+        <div class="prompt-panel-head">
+          <div class="prompt-panel-head-row">
+            <button class="prompt-panel-toggle" type="button" onclick="togglePanel()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9l6 6 6-6" stroke="#004D30" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Your generated prompt
+            </button>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="copyPanelPrompt()">Copy to clipboard</button>
+            <span class="copied-msg" id="panelCopiedMsg" hidden>Copied!</span>
+          </div>
+          <p class="prompt-panel-caption">Copy it now, or expand to keep it visible while you follow the steps below.</p>
+        </div>
+        <div class="prompt-panel-body">
+          <textarea readonly id="panelOutput"></textarea>
+        </div>
+      </div>
+
+      <div class="path-toggle" role="group" aria-label="Which AI tool are you using?">
+        <button type="button" id="pathBtnCopilot" class="active" onclick="selectPath('copilot')">Microsoft Copilot (recommended)</button>
+        <button type="button" id="pathBtnGenai" onclick="selectPath('genai')">A different AI tool</button>
+      </div>
+
+      <div class="instructions-heading">
+        <h3>Follow these steps</h3>
+        <p class="muted" id="instructionsHeadingText">Complete these steps now, in Microsoft Copilot, to turn your prompt into a working chatbot and get it in front of students.</p>
+      </div>
+
+      <div class="instructions-box" id="pathCopilot">
+        <ol>
+          <li>Go to <strong>copilot.cloud.microsoft</strong> and sign in with your UO email and password. Look for the green shield icon — that confirms you're in the protected, UO-approved version. Open <strong>Agent Builder</strong> and create a new agent.</li>
+          <li>Paste your prompt into the agent's instructions. Then, on that same setup screen, scroll to the <strong>"Knowledge"</strong> section. If a reading is a file, click <strong>"Upload"</strong> (or just drag it in); if it's a web page or online article, click <strong>"Enter URL"</strong> and paste the link there instead. You can add more than one — mix files and links freely if you're using several texts. This is what actually gives your chatbot the full reading(s) to work with — more on why below.</li>
+          <li>Share the agent with <strong>"Specific people in your organization,"</strong> then copy its link and add that link into Canvas (for example, as a module item) so students can reach it.</li>
+        </ol>
+      </div>
+
+      <div class="instructions-box" id="pathGenai" hidden>
+        <ol>
+          <li>Go to <strong>claude.ai</strong> or <strong>chatgpt.com</strong>. Start a <strong>"Project"</strong> (Claude) or <strong>"Custom GPT"</strong> (ChatGPT) if you can — it saves your instructions so you don't retype them. Paste your prompt there.</li>
+          <li>If it has a <strong>"Knowledge"</strong> or <strong>"Add content"</strong> option, upload your reading(s) there too, or paste in a link if it accepts one — most tools let you add more than one file or link if you're using several texts. More on why below. These tools aren't covered by UO's Copilot agreement, so check with your instructional designer or campus IT before using one with students, especially around student data privacy.</li>
+          <li>If the tool lets you share a link to your chatbot, copy it and add that link into Canvas (for example, as a module item). Sharing options vary by platform, and students may need their own account.</li>
+        </ol>
+      </div>
+
+      <p class="muted" style="margin-top:18px;"><strong>Why attach the reading(s), too?</strong> The prompt text alone can't include your full reading(s) or a live link to them — attaching the actual file(s), or entering their URL(s), as "knowledge sources" gives your chatbot everything it needs to work with.</p>
+
+      <p class="muted">Not sure which to use? If your campus hasn't pointed you toward something else, Microsoft Copilot is the safest default — it's free for every UO student and already approved for this kind of use. Ask your instructional designer or IT support if you're unsure.</p>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo('screen-step4', 4)">Back</button>
+        <button class="btn btn-primary" onclick="goTo('screen-next', 0)">See what to do next</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEXT STEPS -->
+  <section class="screen" id="screen-next">
+    <div class="card">
+      <h2>You've got your prompt. Here's what's left.</h2>
+      <p class="muted">These steps don't change the text you just built, but they matter for actually getting your chatbot in front of students. They're drawn from your full guide, <em>Building an AI Reading-Discussion Chatbot</em>.</p>
+
+      <div class="next-group">
+        <h3>Before you launch</h3>
+        <div class="check-row"><input type="checkbox" id="n1"><label for="n1">Using Microsoft Copilot? You're already covered — UO's agreement approves it for student use and protects student data. Using a different AI tool instead? Check with your instructional designer or campus IT that it's approved and handles student data the way your institution requires. <span class="guide-ref">(Guide Step 3)</span></label></div>
+        <div class="check-row"><input type="checkbox" id="n2"><label for="n2">Build your chatbot and add its link to Canvas, following the steps on the previous screen. <span class="guide-ref">(Guide Step 7)</span></label></div>
+        <div class="check-row"><input type="checkbox" id="n3"><label for="n3">Test the chatbot yourself, or with a colleague, before students see it — try it as a strong reader, a struggling reader, and someone trying to get it to just give an answer. <span class="guide-ref">(Guide Step 8)</span></label></div>
+      </div>
+
+      <div class="next-group">
+        <h3>Getting your course ready</h3>
+        <div class="check-row"><input type="checkbox" id="n4"><label for="n4">Decide if using the chatbot is required, optional, or tied to a graded assignment, and write clear instructions for students. <span class="guide-ref">(Guide Step 9)</span></label></div>
+        <div class="check-row"><input type="checkbox" id="n5"><label for="n5">Add a short note to your syllabus about the tool, including a privacy note and how it relates to your course's AI-use policy. <span class="guide-ref">(Guide Step 9)</span></label></div>
+        <div class="check-row"><input type="checkbox" id="n6"><label for="n6">Show students a sample conversation or short demo so they understand it's a dialogue, not a shortcut. <span class="guide-ref">(Guide Step 10)</span></label></div>
+      </div>
+
+      <div class="next-group">
+        <h3>After launch</h3>
+        <div class="check-row"><input type="checkbox" id="n7"><label for="n7">Start with a single reading before rolling it out across the whole course. <span class="guide-ref">(Guide Step 11)</span></label></div>
+        <div class="check-row"><input type="checkbox" id="n8"><label for="n8">Check in on how it's going, and be available to help with access issues in the first week. <span class="guide-ref">(Guide Step 11)</span></label></div>
+        <div class="check-row"><input type="checkbox" id="n9"><label for="n9">Ask students what worked and what didn't, and revise your prompt next term based on real conversations. <span class="guide-ref">(Guide Step 12)</span></label></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="goTo('screen-step5', 5)">Back</button>
+        <button class="btn btn-primary" onclick="resetAll()">Build a prompt for another reading</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  const stepLabels = ["Goal", "Persona", "Discussion", "Prompt", "Set Up"];
+
+  function goTo(screenId, stepIndex){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+    renderProgress(stepIndex);
+    syncPromptPanel();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function syncPromptPanel(){
+    const panelOutput = document.getElementById('panelOutput');
+    if(panelOutput) panelOutput.value = document.getElementById('output').value;
+  }
+
+  function togglePanel(){
+    document.getElementById('promptPanel').classList.toggle('open');
+  }
+
+  function copyPanelPrompt(){
+    const text = document.getElementById('panelOutput').value;
+    navigator.clipboard.writeText(text).then(() => {
+      const msg = document.getElementById('panelCopiedMsg');
+      msg.hidden = false;
+      setTimeout(() => { msg.hidden = true; }, 2000);
+    });
+  }
+
+  function renderProgress(stepIndex){
+    const bar = document.getElementById('progressBar');
+    if(stepIndex === 0){ bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    bar.innerHTML = '';
+    for(let i=1;i<=5;i++){
+      const d = document.createElement('div');
+      d.className = 'step' + (i < stepIndex ? ' done' : (i === stepIndex ? ' current' : ''));
+      bar.appendChild(d);
+    }
+  }
+
+  document.getElementById('glossaryToggle').addEventListener('click', () => {
+    document.getElementById('glossaryPanel').classList.toggle('hidden');
+  });
+  document.getElementById('coverGlossaryLink').addEventListener('click', () => {
+    document.getElementById('glossaryPanel').classList.remove('hidden');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+  document.getElementById('glossaryClose').addEventListener('click', () => {
+    document.getElementById('glossaryPanel').classList.add('hidden');
+  });
+
+  // Full-screen toggle: mainly useful when this page is embedded in a
+  // narrow iframe on another site (e.g., a resources page with a sidebar).
+  // Only shown when the browser actually allows it — which requires the
+  // embedding <iframe>, if any, to have the "allowfullscreen" attribute set.
+  (function setUpFullscreen(){
+    const btn = document.getElementById('fullscreenToggle');
+    const canFullscreen = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+    if(!canFullscreen){ return; } // stays hidden
+    btn.hidden = false;
+
+    function isFullscreen(){ return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+    function updateLabel(){ btn.textContent = isFullscreen() ? 'Exit full screen' : 'View full screen'; }
+
+    btn.addEventListener('click', () => {
+      if(!isFullscreen()){
+        const req = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+        if(req) req.call(document.documentElement).catch(() => {});
+      } else {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if(exit) exit.call(document).catch ? exit.call(document).catch(() => {}) : exit.call(document);
+      }
+    });
+    document.addEventListener('fullscreenchange', updateLabel);
+    document.addEventListener('webkitfullscreenchange', updateLabel);
+  })();
+
+  function radioValue(name){
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.id : null;
+  }
+
+  function buildPrompt(){
+    const courseName = document.getElementById('courseName').value.trim();
+    const readingTitle = document.getElementById('readingTitle').value.trim() || 'the assigned reading';
+    const readingAuthor = document.getElementById('readingAuthor').value.trim();
+
+    const goalMap = {
+      goal1: 'build critical-thinking skills', goal2: 'practice close reading',
+      goal3: 'form and defend an argument', goal4: 'connect the reading to real-world issues',
+      goal5: 'prepare for a class discussion', goal6: 'synthesize themes and ideas across multiple texts'
+    };
+    const goals = Object.keys(goalMap).filter(id => document.getElementById(id).checked).map(id => goalMap[id]);
+
+    const neverMap = {
+      never1: 'give students a final answer or thesis outright', never2: 'write any part of a graded assignment for them',
+      never3: 'pretend to be a real person', never4: 'wander into topics unrelated to the reading'
+    };
+    const nevers = Object.keys(neverMap).filter(id => document.getElementById(id).checked).map(id => neverMap[id]);
+
+    const fitMap = {
+      fit1: 'This is optional enrichment for students who want extra practice.',
+      fit2: 'This is tied to a specific assignment or discussion post.',
+      fit3: 'This is required of students, but not directly graded.'
+    };
+    const fitLine = fitMap[radioValue('coursefit')] || '';
+
+    const personaMap = {
+      persona1: 'a curious peer who asks genuine questions, like a classmate thinking out loud',
+      persona2: 'a Socratic guide who leads with questions rather than statements',
+      persona3: 'a thoughtful mentor who is warm and supportive, but still pushes students to go deeper',
+      persona4: "a respectful devil's advocate who challenges the student's first take"
+    };
+    let personas = Object.keys(personaMap).filter(id => document.getElementById(id).checked).map(id => personaMap[id]);
+    const personaCustom = document.getElementById('personaCustom').value.trim();
+    if(personaCustom) personas.push(personaCustom);
+
+    const techMap = {
+      tech1: 'Ask a follow-up question before offering any information.',
+      tech2: 'Challenge assumptions the student brings up.',
+      tech3: 'Point students back to specific passages for evidence.',
+      tech4: 'Avoid giving direct answers, even when asked directly.',
+      tech5: "Periodically summarize the student's point back to them."
+    };
+    let techniques = Object.keys(techMap).filter(id => document.getElementById(id).checked).map(id => techMap[id]);
+    const techCustomName = document.getElementById('techCustomName').value.trim();
+    const techCustomDetail = document.getElementById('techCustomDetail').value.trim();
+    if(techCustomName || techCustomDetail){
+      techniques.push(`${techCustomName ? `"${techCustomName}": ` : ''}${techCustomDetail}`.trim());
+    }
+
+    const toneMap = { tone1: 'warm and encouraging', tone2: 'neutral and academic', tone3: 'playful and casual' };
+    const toneLine = toneMap[radioValue('tone')] || 'neutral and academic';
+
+    const lengthMap = {
+      len1: 'Aim for a short check-in — about 3 to 5 exchanges.',
+      len2: 'Aim for a full conversation — about 8 to 12 exchanges.',
+      len3: 'Let the conversation run as long as the student wants to keep going.'
+    };
+    let lengthLine = lengthMap[radioValue('length')] || lengthMap.len2;
+    if(radioValue('length') === 'len4'){
+      const other = document.getElementById('lenOther').value.trim();
+      lengthLine = other ? `Keep the conversation going until this goal is reached: ${other}.` : 'Keep the conversation going until a specific goal you have in mind is reached.';
+    }
+
+    const citeMap = {
+      cite1: 'Encourage students to quote or point to specific passages, but don\'t require it.',
+      cite2: 'Require a citation to a specific passage before accepting a claim as supported.',
+      cite3: 'Citations are not necessary for this reading.'
+    };
+    const citeLine = citeMap[radioValue('cite')] || citeMap.cite1;
+
+    const readingGuide = document.getElementById('readingGuide').value.trim();
+    const openingQuestion = document.getElementById('openingQuestion').value.trim();
+    const additionalTexts = document.getElementById('additionalTexts').value.trim();
+    const additionalList = additionalTexts ? additionalTexts.split('\n').map(s => s.trim()).filter(Boolean) : [];
+
+    const titleLine = readingAuthor ? `"${readingTitle}" by ${readingAuthor}` : `"${readingTitle}"`;
+
+    let prompt = `You are a reading-discussion chatbot for ${courseName || 'a college course'}. Your one job is to talk through a reading with a student as a conversation partner — not to summarize it, and not to do their thinking for them.\n\n`;
+
+    prompt += `YOUR GOAL\n${goals.length ? goals.map(g => `- Help the student ${g}.`).join('\n') : '- Help the student think more deeply about the reading.'}\n${fitLine ? '\n' + fitLine + '\n' : ''}\n`;
+
+    prompt += `WHAT YOU SHOULD NEVER DO\n${nevers.length ? nevers.map(n => `- Never ${n}.`).join('\n') : '- Never give away the answer instead of helping the student reason toward it.'}\n\n`;
+
+    prompt += `YOUR PERSONA\nAct as ${personas.length ? personas.join('; also, ') : 'a thoughtful, curious conversation partner'}.\n\n`;
+
+    prompt += `CONVERSATION STYLE\nTone: ${toneLine}.\n${techniques.length ? techniques.map(t => `- ${t}`).join('\n') + '\n' : ''}${lengthLine}\n\n`;
+
+    if(additionalList.length){
+      prompt += `READING MATERIAL & SOURCES\nThe primary reading for this conversation is ${titleLine}. You should also draw on these additional texts for comparison: ${additionalList.join('; ')}. The complete texts will be provided to you separately as knowledge sources (files or links) — refer to them directly during the conversation rather than relying on a summary. Help the student identify connections, contrasts, and shared or diverging themes across all of them, rather than treating any one in isolation.\n\n`;
+    } else {
+      prompt += `READING MATERIAL & SOURCES\nThe reading for this conversation is ${titleLine}. The complete text will be provided to you separately as a knowledge source (a file or a link) — refer to it directly during the conversation rather than relying on a summary.\n\n`;
+    }
+
+    if(readingGuide){
+      prompt += `KEY QUESTIONS AND THEMES TO EXPLORE\n${readingGuide}\n\n`;
+    }
+
+    prompt += `CITATION EXPECTATIONS\n${citeLine}\n\n`;
+
+    prompt += `HOW TO OPEN\n${openingQuestion ? `Start the conversation with: "${openingQuestion}"` : 'Open by asking the student what stood out to them about the reading.'}\n\n`;
+
+    prompt += `Throughout the conversation, stay in character and keep steering the student back to their own thinking. If a student pushes for a final answer or asks you to just tell them what to write, decline warmly and redirect them to reasoning it out themselves.`;
+
+    document.getElementById('output').value = prompt;
+    document.getElementById('outputWrap').hidden = false;
+    document.getElementById('nextToStep5Btn').disabled = false;
+    document.getElementById('nextHint').hidden = true;
+  }
+
+  function copyPrompt(){
+    const text = document.getElementById('output').value;
+    navigator.clipboard.writeText(text).then(() => {
+      const msg = document.getElementById('copiedMsg');
+      msg.hidden = false;
+      setTimeout(() => { msg.hidden = true; }, 2000);
+    });
+  }
+
+  async function downloadPrompt(){
+    const text = document.getElementById('output').value;
+    const filename = 'reading-discussion-chatbot-prompt.txt';
+
+    // When this page is running inside the Claude artifact viewer, a plain
+    // browser download is blocked — offer the file through the platform's
+    // downloads capability instead.
+    if (window.claude && typeof window.claude.use === 'function') {
+      try {
+        const downloads = await window.claude.use('downloads');
+        if (downloads) {
+          try {
+            await downloads.save({ filename, data: text });
+          } catch (err) {
+            if (!err || err.code !== 'declined') {
+              alert("Couldn't save the file just now. Use the Copy button instead, then paste it into a document.");
+            }
+          }
+          return;
+        }
+      } catch (e) { /* fall through to a regular download below */ }
+    }
+
+    const blob = new Blob([text], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function selectPath(which){
+    const isCopilot = which === 'copilot';
+    document.getElementById('pathCopilot').hidden = !isCopilot;
+    document.getElementById('pathGenai').hidden = isCopilot;
+    document.getElementById('pathBtnCopilot').classList.toggle('active', isCopilot);
+    document.getElementById('pathBtnGenai').classList.toggle('active', !isCopilot);
+    document.getElementById('instructionsHeadingText').textContent = isCopilot
+      ? 'Complete these steps now, in Microsoft Copilot, to turn your prompt into a working chatbot and get it in front of students.'
+      : 'Complete these steps now, in your chosen AI tool, to turn your prompt into a working chatbot and get it in front of students.';
+  }
+
+  function resetAll(){
+    document.querySelectorAll('input[type=text], input[type=url]').forEach(el => el.value = '');
+    document.querySelectorAll('textarea').forEach(el => el.value = '');
+    document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+    document.getElementById('tech1').checked = true;
+    document.getElementById('fit1').checked = true;
+    document.getElementById('tone2').checked = true;
+    document.getElementById('len2').checked = true;
+    document.getElementById('cite1').checked = true;
+    document.getElementById('outputWrap').hidden = true;
+    document.getElementById('nextToStep5Btn').disabled = true;
+    document.getElementById('nextHint').hidden = false;
+    document.getElementById('promptPanel').classList.remove('open');
+    document.querySelectorAll('#screen-next input[type=checkbox]').forEach(el => el.checked = false);
+    selectPath('copilot');
+    goTo('screen-intro', 0);
+  }
+</script>
+</body>
+</html>
